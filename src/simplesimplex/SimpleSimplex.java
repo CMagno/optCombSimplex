@@ -16,6 +16,7 @@ public class SimpleSimplex {
      */
     public static void main(String[] args) {
         System.out.println("Olá, Carlos");
+        System.out.println("Valeu, Carlos");
     }
     
 }
