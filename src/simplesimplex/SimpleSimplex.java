@@ -5,6 +5,8 @@
  */
 package simplesimplex;
 
+import java.io.File;
+
 /**
  *
  * @author carlosmagno
@@ -15,8 +17,7 @@ public class SimpleSimplex {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("Olá, Carlos");
-        System.out.println("Valeu, Carlos");
+        InputManager.readInputFile(new File("instances/inst2"));
     }
     
 }
