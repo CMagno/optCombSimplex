@@ -18,6 +18,7 @@ public class SimpleSimplex {
      */
     public static void main(String[] args) {
         InputManager.readInputFile(new File("instances/inst2"));
+        System.out.println("FIM");
     }
     
 }
