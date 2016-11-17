@@ -27,10 +27,7 @@ public class InputManager {
             BufferedReader br = new BufferedReader(new FileReader(file));
             String objstr = br.readLine();
             
-            ArrayList< ArrayList<Double> > dynTableau = new ArrayList<>();
-            
-            byte obj = 0;
-            int nVars = 0;
+            Tableau tableau = null;
             
             if((objstr == null) || ((!objstr.equalsIgnoreCase("+")) && (!objstr.equalsIgnoreCase("-")))){
                 System.err.println("Input reading error. The first line must be equals '+' or '-'. LINE: " + objstr);
@@ -39,10 +36,10 @@ public class InputManager {
             
             switch(objstr){
                 case "+":
-                    obj = Model.MAX;
+                    tableau = new Tableau(Tableau.MAX);
                     break;
                 case "-":
-                    obj = Model.MIN;
+                    tableau = new Tableau(Tableau.MAX);
                     break;
             }
             
@@ -52,80 +49,43 @@ public class InputManager {
                 return;
             }
             
-            
-            dynTableau.add(new ArrayList<>());
             String[] tokens = objFuncLine.split(" ");
             for(String token: tokens){
                 try{
-                    double coef = Double.parseDouble(token);
-                    if(obj == Model.MAX){
-                        coef *= -1;
-                    }
-                    dynTableau.get(0).add(coef);
-                    nVars++;
+                    tableau.addDVar(Double.parseDouble(token));
                 }catch(NumberFormatException nfe){
                     System.err.println("Input reading error. The objctive function must have only numbers.");
                     return;
                 }
             }
             
-            int cc = 1;
+            //int cc = 1; // tableau line index of constraint
             String constrLine;
             while((constrLine = br.readLine()) != null){
-                dynTableau.add(new ArrayList<>());
+                tableau.newConstraint();
                 String tokensConst[] = constrLine.split(" ");
                 for(String token: tokensConst){
                     try{
-                        double coef = Double.parseDouble(token);
-                        dynTableau.get(cc).add(coef);
+                        tableau.addConstVarCoef(tableau.getCurTLine(), Double.parseDouble(token));
                     }catch(NumberFormatException nfe){
                         switch(token){
                             case "<=":
-                                dynTableau.get(0).add(0.0);
-                                for(int i = cc -1; i > 0; --i){
-                                    double aux = dynTableau.get(i).get(dynTableau.get(i).size() - 1);
-                                    dynTableau.get(i).remove(dynTableau.get(i).size() - 1);
-                                    dynTableau.get(i).add(0.0);
-                                    dynTableau.get(i).add(aux);
-                                }
-                                for(int i = cc; i > nVars - 1; --i){
-                                    dynTableau.get(cc).add(0.0);
-                                }
-                                dynTableau.get(cc).add(1.0);
+                                tableau.addSlackVar(tableau.getCurTLine(), Tableau.PLUS);
                                 break;
                             case "=":
                                 break;
                             case ">=":
-                                dynTableau.get(0).add(0.0);
-                                for(int i = cc -1; i > 0; --i){
-                                    double aux = dynTableau.get(i).get(dynTableau.get(i).size() - 1);
-                                    dynTableau.get(i).remove(dynTableau.get(i).size() - 1);
-                                    dynTableau.get(i).add(0.0);
-                                    dynTableau.get(i).add(aux);
-                                }
-                                for(int i = cc; i > nVars - 1; --i){
-                                    dynTableau.get(cc).add(0.0);
-                                }
-                                dynTableau.get(cc).add(-1.0);
-                                break;
+                                tableau.addSlackVar(tableau.getCurTLine(), Tableau.MINUS);
                             default:
                                 System.err.println("Input reading error. Invalid constraint syntax.");
                                 return;
                         }
                     }
                 }
-                cc++;
             }
+            tableau.done();
             
-            dynTableau.get(0).add(0.0);
-            
-            System.out.println("GENERATED TABLEAU:");
-            for(ArrayList<Double> linha: dynTableau){
-                for(Double coe: linha){
-                    System.out.print(coe + "\t");
-                }
-                System.out.println("");
-            }
+            tableau.print();
             
         } catch (FileNotFoundException ex) {
             System.err.println("Input reading error. =(");
