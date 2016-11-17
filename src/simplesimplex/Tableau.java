@@ -13,8 +13,13 @@ import java.util.ArrayList;
  */
 public class Tableau {
     
+    public static boolean MAX = true;
+    public static boolean MIN = false;
+    public static boolean PLUS = true;
+    public static boolean MINUS = false;
+    
     private ArrayList< ArrayList <Double> > tableau;
-    private int tableauLineIdx = 0;
+    private int curTabLine = 0, nVars = 0;
     private boolean max;
     
     public Tableau(boolean max){
@@ -24,18 +29,50 @@ public class Tableau {
     
     public void addDVar(double foCoef){
         tableau.get(0).add((max) ? -foCoef : foCoef);
+        nVars++;
     }
     
     public void newConstraint(){
         tableau.add(new ArrayList<>());
-        ++tableauLineIdx;
+        ++curTabLine;
     }
     
-    public void addConstVarCoef(double coef){
-        tableau.get(tableauLineIdx).add(coef);
+    public void addConstVarCoef(int constLine, double coef){
+        tableau.get(constLine).add(coef);
     }
     
-    public void addSlackVar(){
-        
+    public void addSlackVar(int constLine, boolean plus){
+        /*
+        Add slack variable to the objective function
+        */
+        tableau.get(0).add(0.0);
+        for(int i = constLine -1; i > 0; --i){
+            /*
+            For each previous constraint add a new 
+            slack variable before the last element.
+            Remove the last element and insert again
+            after the slack coeficient.
+            */
+            double aux = tableau.get(i).get(tableau.get(i).size() - 1);
+            tableau.get(i).remove(tableau.get(i).size() - 1);
+            tableau.get(i).add(0.0);
+            tableau.get(i).add(aux);
+        }
+        /*
+        Add previous slack variables coeficients to
+        the current constraint.
+        */
+        for(int i = constLine; i > nVars - 1; --i){
+            tableau.get(constLine).add(0.0);
+        }
+        /*
+        Add the own slack varibale to the current.
+        constraint.
+        */
+        tableau.get(constLine).add(1.0);
+    }
+    
+    public int getCurTLine(){
+        return curTabLine;
     }
 }
