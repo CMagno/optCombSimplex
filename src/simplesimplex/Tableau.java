@@ -25,10 +25,11 @@ public class Tableau {
     public Tableau(boolean max){
         tableau = new ArrayList<>();
         tableau.add(new ArrayList<>());
+        this.max = max;
     }
     
     public void addDVar(double foCoef){
-        tableau.get(0).add((max) ? -foCoef : foCoef);
+        tableau.get(0).add((max) ? (-foCoef) : foCoef);
         nVars++;
     }
     
@@ -69,10 +70,28 @@ public class Tableau {
         Add the own slack varibale to the current.
         constraint.
         */
-        tableau.get(constLine).add(1.0);
+        tableau.get(constLine).add((plus ? 1.0 : -1.0));
+    }
+    
+    public void done(){
+        tableau.get(0).add(0.0);
     }
     
     public int getCurTLine(){
         return curTabLine;
+    }
+    
+    public void print(){
+        System.out.println("GENERATED TABLEAU:");
+        for(ArrayList<Double> linha: tableau){
+            for(Double coe: linha){
+                System.out.print(coe + "\t");
+            }
+            System.out.println("");
+        }
+    }
+    
+    public void verifyStpCond(){
+        
     }
 }
