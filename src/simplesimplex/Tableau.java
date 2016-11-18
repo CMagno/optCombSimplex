@@ -168,8 +168,9 @@ public class Tableau {
             if(lin == pivotIdx[0]){
                continue;
             }else{
+                double lineCoef = getCoef(lin, pivotIdx[1]);
                 for(int col = 0; col < nCols; ++col){
-                    setCoef(lin, col, getCoef(lin, col) - (getCoef(pivotIdx[0], col) * getCoef(lin, pivotIdx[1])));
+                    setCoef(lin, col, getCoef(lin, col) - (getCoef(pivotIdx[0], col) * lineCoef));
                 }
             }
         }
