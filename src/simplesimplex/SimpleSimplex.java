@@ -17,8 +17,10 @@ public class SimpleSimplex {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        InputManager.readInputFile(new File("instances/inst2"));
-        System.out.println("FIM2");
+        Tableau tableau = InputManager.readInputFile(new File("instances/inst4"));
+        Model model = new Model(tableau);
+        
+        System.out.println("Optimal Solution: " + model.solve());
     }
     
 }

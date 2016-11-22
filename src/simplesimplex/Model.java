@@ -14,17 +14,22 @@ import java.util.LinkedList;
  */
 public class Model {
     
-    public static final byte MIN = -1;
-    public static final byte MAX = 1;
+    Tableau tableau;
+    double fo_val;    
     
-    private int nVars;
-    private int nFVars;
-    private int nConst;
-    private byte obj;
+    public Model(Tableau tableau){
+        this.tableau = tableau;
+    }
     
-    private double[][] tableau;
-    
-    public Model(byte obj){
-        this.obj = obj;
+    public double solve(){
+        
+        tableau.print();
+        
+        while(tableau.verifyStpCond()){
+            tableau.pivot(tableau.getPivotElement());
+            tableau.print();
+        }
+        
+        return tableau.getFOValue();
     }
 }

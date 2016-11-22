@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class InputManager {
     
-    public static void readInputFile(File file){
+    public static Tableau readInputFile(File file){
         try {
             BufferedReader br = new BufferedReader(new FileReader(file));
             String objstr = br.readLine();
@@ -31,7 +31,7 @@ public class InputManager {
             
             if((objstr == null) || ((!objstr.equalsIgnoreCase("+")) && (!objstr.equalsIgnoreCase("-")))){
                 System.err.println("Input reading error. The first line must be equals '+' or '-'. LINE: " + objstr);
-                return;
+                return null;
             }
             
             switch(objstr){
@@ -39,14 +39,14 @@ public class InputManager {
                     tableau = new Tableau(Tableau.MAX);
                     break;
                 case "-":
-                    tableau = new Tableau(Tableau.MAX);
+                    tableau = new Tableau(Tableau.MIN);
                     break;
             }
             
             String objFuncLine = br.readLine();
             if(objFuncLine == null){
                 System.err.println("Input reading error. The file has no objctive function.");
-                return;
+                return null;
             }
             
             String[] tokens = objFuncLine.split(" ");
@@ -55,7 +55,7 @@ public class InputManager {
                     tableau.addDVar(Double.parseDouble(token));
                 }catch(NumberFormatException nfe){
                     System.err.println("Input reading error. The objctive function must have only numbers.");
-                    return;
+                    return null;
                 }
             }
             
@@ -72,20 +72,24 @@ public class InputManager {
                             case "<=":
                                 tableau.addSlackVar(tableau.getCurTLine(), Tableau.PLUS);
                                 break;
-                            case "=":
-                                break;
                             case ">=":
                                 tableau.addSlackVar(tableau.getCurTLine(), Tableau.MINUS);
+                                break;
+                            case "=":
+                                tableau.addSlackVar(tableau.getCurTLine(), Tableau.NULL);
+                                break;
                             default:
                                 System.err.println("Input reading error. Invalid constraint syntax.");
-                                return;
+                                return null;
                         }
                     }
                 }
             }
             tableau.done();
             
-            tableau.print();
+            // tableau.print();
+            
+            return tableau;
             
         } catch (FileNotFoundException ex) {
             System.err.println("Input reading error. =(");
@@ -94,6 +98,8 @@ public class InputManager {
             System.err.println("Input reading error. =(");
             Logger.getLogger(InputManager.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        return null;
     }
     
 }

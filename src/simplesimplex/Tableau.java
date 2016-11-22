@@ -16,12 +16,16 @@ public class Tableau {
     
     public static boolean MAX = true;
     public static boolean MIN = false;
-    public static boolean PLUS = true;
-    public static boolean MINUS = false;
+    public static double PLUS = 1.0;
+    public static double MINUS = -1.0;
+    public static double NULL = 0.0;
+    
+    private static double M = 1000000;
+    private double FO_B = 0.0;
     
     private ArrayList< ArrayList <Double> > tableau;
-    private int curTabLine = 0, nVars = 0, nCols = 0, nLins = 0;
-    private boolean max;
+    private int curTabLine = 0, nVars = 0, nCols = 0, nLins = 0, nSlackVars = 0;
+    private boolean max, BIG_M_OP = false;
     
     public Tableau(boolean max){
         tableau = new ArrayList<>();
@@ -44,9 +48,13 @@ public class Tableau {
     
     public void addConstVarCoef(int constLine, double coef){
         tableau.get(constLine).add(coef);
+        if(BIG_M_OP){
+            FO_B = FO_B - (M * coef);
+            BIG_M_OP = false;
+        }
     }
     
-    public void addSlackVar(int constLine, boolean plus){
+    public void addSlackVar(int constLine, double type){
         /*
         Add slack variable to the objective function
         */
@@ -58,29 +66,45 @@ public class Tableau {
             Remove the last element and insert again
             after the slack coeficient.
             */
-            double aux = tableau.get(i).get(tableau.get(i).size() - 1);
-            tableau.get(i).remove(tableau.get(i).size() - 1);
-            tableau.get(i).add(0.0);
-            tableau.get(i).add(aux);
+            insertBeforeB(i);
         }
         /*
         Add previous slack variables coeficients to
         the current constraint.
         */
-        for(int i = constLine; i > nVars - 1; --i){
+        for(int i = 0; i < nSlackVars; i++){
             tableau.get(constLine).add(0.0);
         }
         /*
         Add the own slack varibale to the current.
         constraint.
         */
-        tableau.get(constLine).add((plus ? 1.0 : -1.0));
+        if(type != NULL){
+            tableau.get(constLine).add(type);
+        }else{
+            /*
+            Big M process
+            */
+            //System.err.println("Big M");
+            tableau.get(constLine).add(1.0);
+            
+            for(int i = 0; i < nVars; ++i){
+                setFOCoef(i, getFOCoef(i) - (M * getLastLineCoef(i)));
+                BIG_M_OP = true;
+            }
+        }
+        
         nCols++;
+        nSlackVars++;
     }
     
     public void done(){
-        tableau.get(0).add(0.0);
+        tableau.get(0).add(FO_B);
         nCols++;
+        
+        if(nLins - 1 != nSlackVars){
+            System.out.println("It's necessary to fix the tableau.");
+        }
     }
     
     public int getCurTLine(){
@@ -88,7 +112,7 @@ public class Tableau {
     }
     
     public void print(){
-        System.out.println("GENERATED TABLEAU:");
+        System.out.println("TABLEAU " + nLins + "X" + nCols + ":");
         for(ArrayList<Double> linha: tableau){
             for(Double coe: linha){
                 System.out.print(coe + "\t");
@@ -119,7 +143,12 @@ public class Tableau {
     
     private double getConstrB(int idx){
         if(idx < 1) return Double.NaN;
+        //System.out.println("[" + idx + "][" + (nCols - 1) + "]");
         return tableau.get(idx).get(nCols - 1);
+    }
+    
+    private double getLastLineB(){
+        return tableau.get(nLins -1).get(nCols - 1);
     }
     
     public int[] getPivotElement(){
@@ -127,7 +156,7 @@ public class Tableau {
         int column = -1;
         int line = -1;
         
-        for(int var = 0; var < nVars; ++var){
+        for(int var = 0; var < nVars + nSlackVars; ++var){
             if(getFO().get(var) < minVarCol){
                 column = var;
                 minVarCol = getFO().get(var);
@@ -135,13 +164,16 @@ public class Tableau {
         }
         
         for(int constr = 1; constr < nLins; ++constr){
+            
+            if(getConstrB(constr) < 0) continue;
+            
             double ratio = (getConstrB(constr)) / getConstrCoef(constr, column);
             if(ratio < minRatio){
                 line = constr;
                 minRatio = ratio;
             }
         }
-        System.out.println("Pivot ["+line+"]["+column+"]: "+ getCoef(line, column));
+        System.out.println("PIVOT: ["+line+"]["+column+"] -> "+ getCoef(line, column));
         return new int[]{line, column};
     }
     
@@ -153,8 +185,31 @@ public class Tableau {
         return tableau.get(line).get(column);
     }
     
+    private double getFOB(){
+        return getCoef(0, nCols -1);
+    }
+    
+    private double getLastLineCoef(int column){
+        return getCoef(nLins - 1, column);
+    }
+    
     private void setCoef(int line, int column, double newValue){
         tableau.get(line).set(column, new Double(newValue));
+    }
+    
+    private void setFOCoef(int column, double newValue){
+        setCoef(0, column, newValue);
+    }
+    
+    private void setFOB(double newValue){
+        setCoef(0, nCols - 1, newValue);
+    }
+    
+    private void insertBeforeB(int constrLine){
+        double aux = tableau.get(constrLine).get(tableau.get(constrLine).size() - 1);
+        tableau.get(constrLine).remove(tableau.get(constrLine).size() - 1);
+        tableau.get(constrLine).add(0.0);
+        tableau.get(constrLine).add(aux);
     }
     
     public void pivot(int pivotIdx[]){
@@ -181,7 +236,7 @@ public class Tableau {
     }
     
     public boolean verifyStpCond(){
-        for(int var = 0; var < nVars; ++var){
+        for(int var = 0; var < nVars + nSlackVars; ++var){
             if(getFOCoef(var) < 0) return true;
         }
         return false;
